@@ -353,60 +353,89 @@ add_xlsx_row (xlsx_worksheet * worksheet, int row_no)
 	worksheet->max_row = row_no;
 }
 
+// added a patch fix for find_col_no to find more cols.
 static int
 find_col_no (const char *sym)
 {
-/* attempting to get a column number */
-    int i;
     int nro = 0;
-    char x1 = 'A';
-    char x2 = '\0';
-    char dummy[8];
+    int len = strlen(sym);
     char ref[128];
+    strcpy(ref, sym);
+	
+    for (int i = len - 1; i >= 0; i--)
+    {
+        if (ref[i] >= '0' && ref[i] <= '9')
+            ref[i] = '\0';
+        else
+            break;
+    }
 
-    strcpy (ref, sym);
-    for (i = strlen (ref); i >= 0; i--)
-      {
-	  if (ref[i] >= '0' && ref[i] <= '9')
-	      ref[i] = '\0';
-      }
-    if (strlen (ref) == 1 || strlen (ref) == 2)
-	;
-    else
-	return -1;
+    len = strlen(ref);
 
-    while (1)
-      {
-	  if (x2 == '\0')
-	      sprintf (dummy, "%c", x1);
-	  else
-	      sprintf (dummy, "%c%c", x1, x2);
-	  if (strcmp (dummy, ref) == 0)
-	      return nro;
-	  nro++;
-	  if (x2 == '\0')
-	    {
-		if (x1 == 'Z')
-		  {
-		      x1 = 'A';
-		      x2 = 'A';
-		  }
-		else
-		    x1 += 1;
-	    }
-	  else
-	    {
-		if (x2 == 'Z' && x1 != 'Z')
-		  {
-		      x1 += 1;
-		      x2 = 'A';
-		  }
-		else
-		    x2 += 1;
-	    }
-      }
-    return -1;
+    int factor = 1;
+    for (int i = len - 1; i >= 0; i--)
+    {
+        nro += (ref[i] - 'A' + 1) * factor;
+        factor *= 26;
+    }
+
+    return nro - 1;  // Excel columns start from 1, but we return 0-based index
 }
+
+// static int
+// find_col_no (const char *sym)
+// {
+// /* attempting to get a column number */
+//     int i;
+//     int nro = 0;
+//     char x1 = 'A';
+//     char x2 = '\0';
+//     char dummy[8];
+//     char ref[128];
+
+//     strcpy (ref, sym);
+//     for (i = strlen (ref); i >= 0; i--)
+//       {
+// 	  if (ref[i] >= '0' && ref[i] <= '9')
+// 	      ref[i] = '\0';
+//       }
+//     if (strlen (ref) == 1 || strlen (ref) == 2)
+// 	;
+//     else
+// 	return -1;
+
+//     while (1)
+//       {
+// 	  if (x2 == '\0')
+// 	      sprintf (dummy, "%c", x1);
+// 	  else
+// 	      sprintf (dummy, "%c%c", x1, x2);
+// 	  if (strcmp (dummy, ref) == 0)
+// 	      return nro;
+// 	  nro++;
+// 	  if (x2 == '\0')
+// 	    {
+// 		if (x1 == 'Z')
+// 		  {
+// 		      x1 = 'A';
+// 		      x2 = 'A';
+// 		  }
+// 		else
+// 		    x1 += 1;
+// 	    }
+// 	  else
+// 	    {
+// 		if (x2 == 'Z' && x1 != 'Z')
+// 		  {
+// 		      x1 += 1;
+// 		      x2 = 'A';
+// 		  }
+// 		else
+// 		    x2 += 1;
+// 	    }
+//       }
+//     return -1;
+// }
 
 static void
 add_xlsx_col (xlsx_worksheet * worksheet, int col_no, int type, int is_datetime)
